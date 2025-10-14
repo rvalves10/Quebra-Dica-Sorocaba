@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QuebraDica Sorocaba</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        :root {
+            --bg-primary: #020617;
+            --bg-secondary: #0f172a;
+            --bg-card: #1e293b;
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --border-color: #334155;
+            --accent-red: #C8102E;
+            --accent-yellow: #FFD700;
+        }
+
+        .light-mode {
+            --bg-primary: #f1f5f9;
+            --bg-secondary: #ffffff;
+            --bg-card: #ffffff;
+            --text-primary: #1e293b;
+            --text-secondary: #475569;
+            --border-color: #e2e8f0;
+        }
+
+        html { scroll-behavior: smooth; }
+        body {
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            font-family: sans-serif;
+            overflow-x: hidden;
+            transition: background-color 0.3s, color 0.3s;
+        }
+        #navbar {
+            transform: translateY(-100%);
+            animation: slide-down 0.5s ease-out 0.2s forwards;
+            background-color: color-mix(in srgb, var(--bg-primary) 80%, transparent);
+            backdrop-filter: blur(4px);
+        }
+        @keyframes slide-down {
+            to { transform: translateY(0); }
+        }
+        .bg-animated {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -10;
+            overflow: hidden;
+            background-color: var(--bg-primary);
+        }
+        .bg-animated .grid-bg {
+            position: absolute;
+            inset: 0;
+            background-image: linear-gradient(to right, color-mix(in srgb, var(--border-color) 20%, transparent) 1px, transparent 1px), linear-gradient(to bottom, color-mix(in srgb, var(--border-color) 20%, transparent) 1px, transparent 1px);
+            background-size: 14px 24px;
+        }
+        .bg-animated .radial-gradient {
+            position: absolute; left: 50%; top: 0; width: 1000px; height: 1000px;
+            transform: translateX(-50%); border-radius: 50%;
+            background: radial-gradient(circle 400px at 50% 300px, #C8102E33, transparent);
+            animation: move-glow 20s infinite alternate ease-in-out;
+        }
+        @keyframes move-glow {
+            from { transform: translateX(-50%) translateY(-100px); }
+            to { transform: translateX(-50%) translateY(100px); }
+        }
+        .star {
+            position: absolute; border-radius: 50%;
+            background-color: rgba(253, 224, 71, 0.5);
+            animation: twinkle infinite linear;
+        }
+        @keyframes twinkle {
+            0%, 100% { opacity: 0; transform: scale(0.5); }
+            50% { opacity: 1; transform: scale(1); }
+        }
+        
+        #drawer-content::-webkit-scrollbar, #comments-list::-webkit-scrollbar { display: none; }
+        #drawer-content, #comments-list { -ms-overflow-style: none; scrollbar-width: none; }
+
+        .hidden { display: none; }
+
+        .fade-in { animation: fadeIn 0.3s ease-out forwards; }
+        .fade-out { animation: fadeOut 0.3s ease-in forwards; }
+        .scale-in { animation: fadeInScaleUp 0.3s ease-out forwards; }
+        .scale-out { animation: fadeOutScaleDown 0.3s ease-in forwards; }
+        .slide-in { animation: slideInUp 0.4s ease-out forwards; }
+        .slide-out { animation: slideOutDown 0.4s ease-in forwards; }
+
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes fadeOut { from { opacity: 1; } to { opacity: 0; } }
+        @keyframes fadeInScaleUp {
+            from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); }
+        }
+        @keyframes fadeOutScaleDown {
+            from { opacity: 1; transform: scale(1); } to { opacity: 0; transform: scale(0.95); }
+        }
+        @keyframes slideInUp {
+            from { opacity: 0; transform: translateY(50px); } to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes slideOutDown {
+            from { opacity: 1; transform: translateY(0); } to { opacity: 0; transform: translateY(50px); }
+        }
+
+        .reveal {
+            opacity: 0; transform: translateY(30px);
+            transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+            will-change: opacity, transform;
+        }
+        .reveal.visible { opacity: 1; transform: translateY(0); }
+        
+        /* Estilos aplicados dinamicamente */
+        .bg-primary { background-color: var(--bg-primary); }
+        .bg-secondary { background-color: var(--bg-secondary); }
+        .bg-card { background-color: var(--bg-card); }
+        .text-primary { color: var(--text-primary); }
+        .text-secondary { color: var(--text-secondary); }
+        .border-color { border-color: var(--border-color); }
+    </style>
+</head>
+<body>
+    <div class="bg-animated">
+        <div class="grid-bg"></div>
+        <div class="radial-gradient"></div>
+        <div id="stars-container"></div>
+    </div>
+
+    <header id="navbar" class="fixed top-0 left-0 right-0 z-50">
+        <nav class="container mx-auto px-6 py-4 flex justify-between items-center">
+            <div class="text-2xl font-bold text-primary">QuebraDica <span class="text-[#FFD700]">Sorocaba</span></div>
+            <div class="hidden md:flex space-x-6 items-center">
+                <a href="#dicas" class="text-secondary hover:text-[#FFD700] transition-colors duration-300 font-medium">As Dicas</a>
+                <button id="theme-toggle-desktop" class="p-2 rounded-full text-secondary hover:text-[#FFD700] hover:bg-card">
+                    <svg id="theme-icon-sun-desktop" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m4.93 19.07 1.41-1.41"/><path d="m17.66 6.34 1.41-1.41"/></svg>
+                    <svg id="theme-icon-moon-desktop" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="hidden"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
+                </button>
+                <button id="open-share-modal-desktop" class="bg-gradient-to-r from-[#C8102E] to-[#FFD700] text-white font-semibold py-2 px-4 rounded-lg shadow-md transform hover:scale-105 transition-transform">Mandar a Dica</button>
+            </div>
+            <div class="md:hidden flex items-center gap-2">
+                 <button id="theme-toggle-mobile" class="p-2 rounded-full text-secondary hover:text-[#FFD700] hover:bg-card">
+                    <svg id="theme-icon-sun-mobile" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m4.93 19.07 1.41-1.41"/><path d="m17.66 6.34 1.41-1.41"/></svg>
+                    <svg id="theme-icon-moon-mobile" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="hidden"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
+                </button>
+                <button id="mobile-menu-button" class="text-primary z-50">
+                    <svg id="menu-icon-open" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" x2="20" y1="12" y2="12" /><line x1="4" x2="20" y1="6" y2="6" /><line x1="4" x2="20" y1="18" y2="18" /></svg>
+                    <svg id="menu-icon-close" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="hidden"><path d="M18 6 6 18" /><path d="m6 6 12 12" /></svg>
+                </button>
+            </div>
+        </nav>
+        <div id="mobile-menu" class="hidden md:hidden bg-secondary absolute top-full left-0 w-full">
+            <div class="flex flex-col items-center space-y-6 py-8">
+                <a href="#dicas" class="mobile-menu-link text-secondary hover:text-[#FFD700] transition-colors duration-300 text-lg">As Dicas</a>
+                <button id="open-share-modal-mobile" class="mobile-menu-link bg-gradient-to-r from-[#C8102E] to-[#FFD700] text-white font-semibold py-2 px-5 rounded-lg shadow-md transform hover:scale-105 transition-transform">Mandar a Dica</button>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <section class="min-h-screen flex items-center justify-center text-center pt-20">
+            <div class="container mx-auto px-6 reveal">
+                <h1 class="text-4xl md:text-6xl font-extrabold text-primary leading-tight mb-4">Descubra os melhores rolês de <span class="text-transparent bg-clip-text bg-gradient-to-r from-[#C8102E] to-[#FFD700]">Sorocaba</span></h1>
+                <p class="text-lg md:text-xl text-secondary mb-8">Um portal daora, feito pela galera de Soro, pra galera de Soro.</p>
+                <a href="#dicas" class="bg-[#C8102E] text-white font-bold py-3 px-8 rounded-full text-lg shadow-lg transition-all duration-300 inline-block transform hover:scale-110 hover:shadow-2xl">Bora Vê as Dicas</a>
+            </div>
+        </section>
+
+        <div class="sticky top-[72px] z-40 bg-secondary/80 backdrop-blur-sm reveal">
+            <div class="container mx-auto px-6 py-6">
+                <div class="relative">
+                    <input id="search-input" type="text" placeholder="Qual o rolê de hoje? (Ex: pizza, parque...)" class="w-full bg-card border border-color rounded-lg py-3 pl-12 pr-4 text-primary placeholder-secondary focus:ring-2 focus:ring-[#FFD700] focus:outline-none"/>
+                    <div class="absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5 text-secondary"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <section id="dicas" class="py-20 bg-secondary min-h-[50vh]">
+            <div id="tips-container" class="container mx-auto px-6 space-y-16"></div>
+        </section>
+    </main>
+
+    <!-- MODAIS E GAVETAS (INICIALMENTE OCULTOS) -->
+
+    <div id="share-tip-modal" class="hidden fixed inset-0 z-[100] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
+        <div id="share-tip-modal-content" class="bg-card text-primary p-8 rounded-2xl shadow-xl w-full max-w-lg border border-color relative">
+            <button id="close-share-modal" class="absolute top-4 right-4 text-secondary hover:text-primary transition-colors"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18" /><path d="m6 6 12 12" /></svg></button>
+            <h3 class="text-2xl font-bold text-[#FFD700] mb-6 text-center">Manda a Dica Aí!</h3>
+            <form id="share-tip-form" class="space-y-4">
+                <div><label for="title" class="block text-sm font-medium text-secondary mb-1">Qual o nome do pico?</label><input type="text" name="title" required class="w-full bg-secondary border border-color rounded-lg p-2 focus:ring-2 focus:ring-[#FFD700] focus:outline-none text-primary" /></div>
+                <div><label for="category" class="block text-sm font-medium text-secondary mb-1">É o quê?</label><select name="category" class="w-full bg-secondary border border-color rounded-lg p-2 focus:ring-2 focus:ring-[#FFD700] focus:outline-none text-primary"><option>Restaurantes</option><option>Rolês / Vida Noturna</option><option>Eventos e Cultura</option><option>Pontos Turísticos</option></select></div>
+                <div><label for="description" class="block text-sm font-medium text-secondary mb-1">Conta mais aí...</label><textarea name="description" rows="3" required class="w-full bg-secondary border border-color rounded-lg p-2 focus:ring-2 focus:ring-[#FFD700] focus:outline-none text-primary"></textarea></div>
+                <div><label for="location" class="block text-sm font-medium text-secondary mb-1">Onde fica?</label><input type="text" name="location" placeholder="Ex: Av. Barão de Tatuí" class="w-full bg-secondary border border-color rounded-lg p-2 focus:ring-2 focus:ring-[#FFD700] focus:outline-none text-primary" /></div>
+                <div><label for="hours" class="block text-sm font-medium text-secondary mb-1">Qual o horário?</label><input type="text" name="hours" placeholder="Ex: Seg a Sex, 09h - 18h" class="w-full bg-secondary border border-color rounded-lg p-2 focus:ring-2 focus:ring-[#FFD700] focus:outline-none text-primary" /></div>
+                <div><label for="price" class="block text-sm font-medium text-secondary mb-1">Qual a faixa de preço?</label><input type="text" name="price" placeholder="Ex: R$ 50 - R$ 100" class="w-full bg-secondary border border-color rounded-lg p-2 focus:ring-2 focus:ring-[#FFD700] focus:outline-none text-primary" /></div>
+                <div class="text-center pt-4"><button type="submit" class="bg-gradient-to-r from-[#C8102E] to-[#FFD700] text-white font-semibold py-2 px-8 rounded-lg shadow-md transform hover:scale-105 transition-transform">Mandar a Braba</button></div>
+            </form>
+        </div>
+    </div>
+
+    <div id="tip-detail-drawer" class="hidden fixed inset-0 z-[100] bg-black/70 backdrop-blur-sm">
+        <div id="drawer-content-wrapper" class="absolute bottom-0 h-[85vh] w-full overflow-hidden rounded-t-3xl bg-card border-t border-color" style="transform: translateY(100%);">
+            <div class="absolute left-0 right-0 top-0 z-10 flex justify-center bg-card p-4 rounded-t-3xl">
+                <div id="drawer-handle" class="h-2 w-14 cursor-grab touch-none rounded-full bg-secondary active:cursor-grabbing"></div>
+            </div>
+            <div id="drawer-content" class="relative z-0 h-full overflow-y-scroll p-8 pt-12">
+                <div class="flex justify-between items-start">
+                    <h3 id="drawer-title" class="text-3xl font-bold text-[#FFD700] mb-4"></h3>
+                    <button id="share-button" class="flex items-center gap-2 bg-secondary text-primary font-semibold py-2 px-4 rounded-lg shadow-md transform hover:scale-105 transition-transform">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" x2="12" y1="2" y2="15"/></svg>
+                        <span>Compartilhar</span>
+                    </button>
+                </div>
+                <p id="drawer-details" class="text-secondary mb-6 text-lg"></p>
+                <div class="border-t border-color pt-4 space-y-3">
+                    <div class="flex items-center gap-3"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5 text-secondary flex-shrink-0"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" /><circle cx="12" cy="10" r="3" /></svg><span id="drawer-location"></span></div>
+                    <div class="flex items-center gap-3"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5 text-secondary flex-shrink-0"><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg><span id="drawer-hours"></span></div>
+                    <div class="flex items-center gap-3"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5 text-secondary flex-shrink-0"><line x1="12" x2="12" y1="2" y2="22" /><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" /></svg><span id="drawer-price"></span></div>
+                </div>
+                
+                <!-- Seção de Comentários -->
+                <div class="border-t border-color mt-8 pt-6">
+                    <h4 class="text-2xl font-bold text-primary mb-4">O que a galera tá falando:</h4>
+                    <div id="comments-list" class="space-y-4 max-h-48 overflow-y-auto mb-6 pr-2">
+                        <!-- Comentários serão inseridos aqui -->
+                    </div>
+                    <form id="comment-form" class="space-y-3">
+                        <input type="text" name="commenterName" required placeholder="Seu nome" class="w-full bg-secondary border border-color rounded-lg p-2 focus:ring-2 focus:ring-[#FFD700] focus:outline-none text-primary">
+                        <textarea name="commentText" required placeholder="Manda a letra aqui..." rows="3" class="w-full bg-secondary border border-color rounded-lg p-2 focus:ring-2 focus:ring-[#FFD700] focus:outline-none text-primary"></textarea>
+                        <button type="submit" class="bg-[#C8102E] text-white font-semibold py-2 px-6 rounded-lg shadow-md transform hover:scale-105 transition-transform">Comentar</button>
+                    </form>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <div id="confirm-delete-modal" class="hidden fixed inset-0 z-[120] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+        <div id="confirm-delete-modal-content" class="bg-card text-primary p-8 rounded-2xl shadow-xl w-full max-w-sm border border-color text-center">
+            <h3 class="text-xl font-bold text-primary mb-4">Mano, certeza?</h3>
+            <p class="text-secondary mb-8">Depois que apagar essa dica, já era, não tem volta. Fechou?</p>
+            <div class="flex justify-center gap-4">
+                <button id="cancel-delete" class="bg-gray-600 hover:bg-gray-500 text-white font-semibold py-2 px-6 rounded-lg transition-colors">Deixa quieto</button>
+                <button id="confirm-delete" class="bg-red-600 hover:bg-red-500 text-white font-semibold py-2 px-6 rounded-lg transition-colors">Pode apagar</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="success-toast" class="hidden fixed bottom-10 right-10 z-[110] bg-green-600 text-white py-3 px-6 rounded-lg shadow-lg font-semibold"></div>
+
+    <script>
+        // --- DADOS E ESTADO GLOBAL ---
+        let tipsData = [];
+        let votedTips = [];
+        let tipToDeleteId = null;
+        let activeTipIdForComments = null;
+        let currentTheme = 'dark';
+
+        const initialTipsData = [
+             { category: "🍔 Restaurantes", borderColor: "border-red-500",
+                tips: [
+                    { id: 1, title: "Pobre Juan Sorocaba", summary: "Churrascaria premium com cortes argentinos no Iguatemi Esplanada.", details: "O Pobre Juan é especializado em cortes argentinos premium, ideal para ocasiões especiais. Destaque para o Bife de Chorizo e a Parrillada.", location: "Iguatemi Esplanada", hours: "Todos os dias, 12h – 23h", price: "R$ 120 – R$ 300 por pessoa", likes: 138, timestamp: "2025-09-26T14:30:00Z", comments: [{name: "Mariana", text: "Lugar chique, perfeito pra comemorar aniversário de casamento. A carne é sensacional!"}, {name: "Jorge", text: "É caro, mas vale cada centavo. Atendimento nota 10."}] },
+                    { id: 2, title: "Outback Steakhouse", summary: "Rede australiana famosa pelas ribs e a Bloomin’ Onion.", details: "O Outback é conhecido pelo ambiente descontraído e pratos icônicos como a Ribs on the Barbie e a Bloomin’ Onion. Ótima opção para grupos.", location: "Iguatemi Esplanada", hours: "Todos os dias, 11h30 – 23h", price: "R$ 80 – R$ 180 por pessoa", likes: 256, timestamp: "2025-09-25T19:00:00Z", comments: [{name: "Fernanda", text: "Happy hour de lei! O chopp trincando e a costelinha não tem erro."}, {name: "Lucas", text: "Fila de espera gigante no fds, mas a comida compensa."}] },
+                    { id: 3, title: "Restaurante Barcelona", summary: "Tradicional, serve pratos espanhóis como paella.", details: "O Restaurante Barcelona é referência em gastronomia espanhola em Sorocaba. A paella é o prato mais procurado, acompanhada de ambiente acolhedor.", location: "Av. Barão de Tatuí", hours: "Terça a domingo, 12h – 22h", price: "R$ 90 – R$ 200 por pessoa", likes: 97, timestamp: "2025-09-25T12:15:00Z", comments: [] },
+                    { id: 4, title: "Burguer House", summary: "Hamburgueria artesanal com opções criativas.", details: "A Burguer House aposta em hambúrgueres artesanais, acompanhados de batatas rústicas e milkshakes variados. Ambiente descontraído e jovem.", location: "Av. Armando Pannunzio", hours: "Todos os dias, 18h – 00h", price: "R$ 35 – R$ 70 por pessoa", likes: 189, timestamp: "2025-09-24T22:05:00Z", comments: [] },
+                    { id: 5, title: "Chico Rosa", summary: "Restaurante de comida brasileira caseira.", details: "O Chico Rosa é conhecido pelo buffet de pratos típicos brasileiros e ambiente familiar, ótimo para almoços em grupo.", location: "Centro de Sorocaba", hours: "Segunda a sábado, 11h – 15h", price: "R$ 40 – R$ 70 por pessoa", likes: 154, timestamp: "2025-09-24T13:00:00Z", comments: [] },
+                ]
+            },
+            { category: "🎉 Rolês / Vida Noturna", borderColor: "border-purple-500",
+                tips: [
+                    { id: 6, title: "Hangar 51", summary: "Balada famosa com DJs de renome.", details: "O Hangar 51 é uma das casas noturnas mais badaladas da região, sempre trazendo festas temáticas e DJs conhecidos do cenário eletrônico.", location: "Av. Rudolf Dafferner", hours: "Sexta e sábado, 22h – 05h", price: "Entrada R$ 30 – R$ 80 + consumo", likes: 211, timestamp: "2025-09-26T02:00:00Z", comments: [{name: "Jessica", text: "Melhor balada da região pra quem curte eletrônico. O som é pesado!"}] },
+                    { id: 7, title: "Villa Madalena Sorocaba", summary: "Bar com música ao vivo e drinks.", details: "O Villa Madalena é point em Sorocaba, com música ao vivo variada e cardápio de drinks especiais, ideal para grupos de amigos.", location: "Av. Prof. Izoraida Marques Peres", hours: "Terça a domingo, 18h – 02h", price: "R$ 40 – R$ 100 por pessoa", likes: 173, timestamp: "2025-09-25T21:30:00Z", comments: [] },
+                    { id: 8, title: "Manifesto Pub", summary: "Pub de rock com bandas locais.", details: "O Manifesto Pub é referência no cenário underground de Sorocaba, sempre com bandas independentes e clima alternativo.", location: "Centro de Sorocaba", hours: "Quinta a sábado, 19h – 02h", price: "R$ 20 – R$ 60 por pessoa", likes: 129, timestamp: "2025-09-24T23:00:00Z", comments: [{name: "Rodrigo", text: "Point certo pra quem curte um rock de verdade. As bandas que tocam lá são muito boas."}] },
+                    { id: 9, title: "Clube 28 de Setembro", summary: "Clube tradicional para festas e shows.", details: "O Clube 28 de Setembro é histórico em Sorocaba, com eventos sociais, shows e festas que marcam gerações.", location: "Centro", hours: "Conforme programação de eventos", price: "R$ 30 – R$ 150 por evento", likes: 88, timestamp: "2025-09-23T18:00:00Z", comments: [] },
+                ]
+            },
+            { category: "🎭 Eventos e Cultura", borderColor: "border-yellow-500",
+                tips: [
+                    { id: 10, title: "Festival Agosto Cultural", summary: "Festival anual com música, teatro e arte.", details: "O Agosto Cultural reúne artistas locais e nacionais em apresentações de música, teatro, dança e exposições durante todo o mês de agosto.", location: "Diversos pontos da cidade", hours: "Agosto (datas variáveis)", price: "Gratuito", likes: 195, timestamp: "2025-08-01T10:00:00Z", comments: [] },
+                    { id: 11, title: "Feira do Largo da Banca", summary: "Feirinha de artesanato e gastronomia.", details: "A Feira do Largo da Banca é um espaço cultural com barracas de artesanato, comidas típicas e apresentações artísticas.", location: "Largo da Banca, Centro", hours: "Todo domingo, 9h – 14h", price: "Gratuito", likes: 231, timestamp: "2025-09-21T11:00:00Z", comments: [{name: "Dona Célia", text: "Adoro passear no domingo de manhã, sempre acho um artesanato bonito e como um pastel delicioso."}] },
+                    { id: 12, title: "Mostra de Teatro de Sorocaba", summary: "Festival com peças independentes.", details: "A Mostra de Teatro valoriza a cena artística local, trazendo grupos independentes e peças variadas para o público sorocabano.", location: "Diversos teatros da cidade", hours: "Geralmente em outubro", price: "Gratuito ou preço simbólico (R$ 5 – R$ 20)", likes: 76, timestamp: "2025-09-15T16:00:00Z", comments: [] },
+                    { id: 13, title: "Virada Cultural Paulista", summary: "Grande evento cultural com shows e arte.", details: "A Virada Cultural reúne shows musicais, espetáculos de dança, teatro e exposições artísticas em diversos pontos da cidade.", location: "Centro de Sorocaba", hours: "Normalmente em maio/junho", price: "Gratuito", likes: 302, timestamp: "2025-05-20T20:00:00Z", comments: [] },
+                ]
+            },
+            { category: "🏞️ Pontos Turísticos", borderColor: "border-green-500",
+                tips: [
+                    { id: 14, title: "Parque das Águas", summary: "Cartão-postal de Sorocaba.", details: "O Parque das Águas é ideal para caminhadas, piqueniques e eventos ao ar livre, sendo um dos espaços mais frequentados da cidade.", location: "Av. Dom Aguirre", hours: "Aberto diariamente", price: "Gratuito", likes: 412, timestamp: "2025-09-22T09:00:00Z", comments: [] },
+                    { id: 15, title: "Zoológico Quinzinho de Barros", summary: "Um dos maiores zoológicos do Brasil.", details: "O Zoológico Quinzinho de Barros abriga espécies raras e é referência em preservação e educação ambiental.", location: "Vila Hortência", hours: "Terça a domingo, 9h – 17h", price: "R$ 6 por pessoa", likes: 530, timestamp: "2025-09-20T14:00:00Z", comments: [{name: "Rafael", text: "Levei meus filhos e eles amaram. O lugar é enorme e bem cuidado. O elefante é demais!"}, {name: "Beatriz", text: "Ótimo passeio em família. Barato e educativo."}] },
+                    { id: 16, title: "Mosteiro de São Bento", summary: "Construção histórica do século XVII.", details: "O Mosteiro de São Bento é um dos patrimônios mais antigos da cidade, famoso por sua arquitetura e importância cultural.", location: "Centro", hours: "Missas e visitas em horários programados", price: "Gratuito", likes: 215, timestamp: "2025-09-18T15:00:00Z", comments: [] },
+                    { id: 17, title: "Museu Histórico Sorocabano", summary: "Conta a história da cidade.", details: "O Museu Histórico reúne documentos, objetos e exposições que preservam a memória de Sorocaba.", location: "Dentro do Zoológico Quinzinho de Barros", hours: "Terça a domingo, 9h – 17h", price: "Incluso no ingresso do Zoológico (R$ 6)", likes: 188, timestamp: "2025-09-17T13:45:00Z", comments: [] },
+                    { id: 18, title: "Shopping Iguatemi Esplanada", summary: "Maior centro de compras da região.", details: "O Iguatemi Esplanada é um shopping sofisticado, com lojas de grife, cinema moderno e praça de alimentação completa.", location: "Votorantim/Sorocaba", hours: "Todos os dias, 10h – 22h", price: "Variável (dependendo das lojas/restaurantes)", likes: 350, timestamp: "2025-09-23T19:30:00Z", comments: [{name: "Ana Paula", text: "O melhor shopping, tem todas as lojas que eu gosto e a praça de alimentação é ótima."}] },
+                ]
+            }
+        ];
+
+        // --- FUNÇÕES DE PERSISTÊNCIA (localStorage) ---
+        const loadData = () => {
+            tipsData = JSON.parse(localStorage.getItem('quebraDicaAllTips')) || initialTipsData;
+            votedTips = JSON.parse(localStorage.getItem('quebraDicaVotedTips')) || [];
+            currentTheme = localStorage.getItem('quebraDicaTheme') || 'dark';
+        };
+
+        const saveData = () => {
+            localStorage.setItem('quebraDicaAllTips', JSON.stringify(tipsData));
+            localStorage.setItem('quebraDicaVotedTips', JSON.stringify(votedTips));
+        };
+        const saveTheme = () => {
+            localStorage.setItem('quebraDicaTheme', currentTheme);
+        }
+
+        // --- FUNÇÃO DE UTILIDADE (Formatar tempo) ---
+        const formatTimeAgo = (isoString) => {
+            const date = new Date(isoString);
+            const now = new Date();
+            const seconds = Math.round((now - date) / 1000);
+            const minutes = Math.round(seconds / 60);
+            const hours = Math.round(minutes / 60);
+            const days = Math.round(hours / 24);
+
+            if (seconds < 60) return `há ${seconds} segundos`;
+            if (minutes < 60) return `há ${minutes} minutos`;
+            if (hours < 24) return `há ${hours} horas`;
+            if (days === 1) return `ontem`;
+            if (days < 7) return `há ${days} dias`;
+            
+            return `em ${date.toLocaleDateString('pt-BR')}`;
+        };
+
+        // --- FUNÇÕES DE RENDERIZAÇÃO ---
+        const renderTips = (filterQuery = '') => {
+            const container = document.getElementById('tips-container');
+            container.innerHTML = '';
+            let hasResults = false;
+
+            tipsData.forEach(category => {
+                const filteredTips = category.tips.filter(tip => 
+                    tip.title.toLowerCase().includes(filterQuery.toLowerCase()) || 
+                    tip.summary.toLowerCase().includes(filterQuery.toLowerCase()) || 
+                    tip.details.toLowerCase().includes(filterQuery.toLowerCase())
+                );
+
+                if (filteredTips.length === 0) return;
+                hasResults = true;
+                const categorySection = document.createElement('div');
+                categorySection.className = 'reveal';
+                categorySection.innerHTML = `
+                    <h2 class="text-3xl font-bold text-primary mb-8 border-l-4 pl-4 ${category.borderColor}">${category.category}</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+                        ${filteredTips.map(tip => `
+                            <div class="bg-card rounded-2xl shadow-lg flex flex-col overflow-hidden relative transform hover:-translate-y-2 transition-transform duration-300">
+                                ${tip.isUserAdded ? `<button data-delete-id="${tip.id}" class="absolute top-2 right-2 z-10 p-1 bg-red-600/80 rounded-full text-white transform hover:scale-125 hover:rotate-[-10deg] transition-transform" aria-label="Excluir dica"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg></button>` : ''}
+                                <div class="p-6 flex flex-col flex-grow">
+                                    <h3 class="font-bold text-xl text-primary mb-1">${tip.title}</h3>
+                                    <p class="text-xs text-secondary mb-2">${tip.timestamp ? `Postado ${formatTimeAgo(tip.timestamp)}` : ''}</p>
+                                    <p class="text-secondary mb-4 flex-grow">${tip.summary}</p>
+                                    <div class="flex justify-between items-center mt-auto pt-4 border-t border-color">
+                                        <button data-details-id="${tip.id}" class="text-center bg-secondary text-primary font-semibold py-2 px-4 rounded-lg shadow-md transform hover:scale-105 transition-transform">Ver Mais</button>
+                                        <button data-like-id="${tip.id}" class="flex items-center gap-2 font-semibold py-2 px-4 rounded-lg transition-colors transform hover:scale-105 ${votedTips.includes(tip.id) ? 'bg-emerald-500 text-white' : 'bg-gray-600 text-primary hover:bg-emerald-600'}">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 10v12"/><path d="M18 10V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v6H4.2a2 2 0 0 0-1.9 2.7l2.5 8.3a2 2 0 0 0 1.9 1.3H18a2 2 0 0 0 2-2v-8Z"/></svg>
+                                            <span>${tip.likes}</span>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>`;
+                container.appendChild(categorySection);
+            });
+            if (!hasResults) container.innerHTML = `<div class="text-center text-secondary reveal visible"><h3 class="text-2xl font-bold mb-2">Ih, não achei nada...</h3><p>Tenta procurar por outro rolê, fechou?</p></div>`;
+        };
+        
+        const renderComments = (tipId) => {
+            const list = document.getElementById('comments-list');
+            const tip = findTipById(tipId);
+            list.innerHTML = '';
+            if (!tip || !tip.comments || tip.comments.length === 0) {
+                list.innerHTML = `<p class="text-secondary italic">Ninguém comentou ainda. Seja o primeiro!</p>`;
+                return;
+            }
+            tip.comments.forEach(comment => {
+                list.innerHTML += `
+                    <div class="bg-secondary p-3 rounded-lg">
+                        <p class="font-bold text-primary">${comment.name}</p>
+                        <p class="text-secondary">${comment.text}</p>
+                    </div>
+                `;
+            });
+        };
+        
+        // --- FUNÇÕES DE MANIPULAÇÃO DE DADOS ---
+        const findTipById = (tipId) => {
+            for (const category of tipsData) {
+                const found = category.tips.find(t => t.id === tipId);
+                if (found) return found;
+            }
+            return null;
+        };
+        
+        const handleAddTip = (formData) => {
+            const newTip = {
+                id: Date.now(), title: formData.get('title'),
+                summary: formData.get('description').substring(0, 80) + (formData.get('description').length > 80 ? '...' : ''),
+                details: formData.get('description'), 
+                location: formData.get('location') || 'Não informado', hours: formData.get('hours') || 'Não informado',
+                price: formData.get('price') || 'Não informado', isUserAdded: true, likes: 0, 
+                timestamp: new Date().toISOString(),
+                comments: []
+            };
+            const categoryName = formData.get('category');
+            const targetCategory = tipsData.find(c => c.category.includes(categoryName));
+            if (targetCategory) targetCategory.tips.unshift(newTip);
+            saveData();
+            renderTips();
+            showToast("Aí sim! Dica enviada!");
+        };
+        const handleDeleteTip = () => {
+            if (!tipToDeleteId) return;
+            tipsData = tipsData.map(category => ({...category, tips: category.tips.filter(tip => tip.id !== tipToDeleteId)}));
+            saveData();
+            renderTips();
+            closeConfirmDeleteModal();
+        };
+        const handleLike = (tipId) => {
+            const isLiked = votedTips.includes(tipId);
+            const tip = findTipById(tipId);
+            if (tip) tip.likes += isLiked ? -1 : 1;
+            if (isLiked) votedTips = votedTips.filter(id => id !== tipId); else votedTips.push(tipId);
+            saveData();
+            renderTips(document.getElementById('search-input').value);
+        };
+        const handleComment = (e) => {
+            e.preventDefault();
+            const tip = findTipById(activeTipIdForComments);
+            if (!tip) return;
+            const name = e.target.commenterName.value;
+            const text = e.target.commentText.value;
+            tip.comments.unshift({ name, text });
+            saveData();
+            renderComments(activeTipIdForComments);
+            e.target.reset();
+        };
+        const handleShare = (tipId) => {
+            const tip = findTipById(tipId);
+            if (!tip) return;
+            const shareData = {
+                title: `QuebraDica Sorocaba: ${tip.title}`,
+                text: tip.summary,
+                url: window.location.href
+            };
+            if (navigator.share && navigator.canShare(shareData)) {
+                navigator.share(shareData).catch(err => console.error("Erro ao compartilhar", err));
+            } else {
+                navigator.clipboard.writeText(`${shareData.title}\n${shareData.text}`);
+                showToast("Link copiado! Manda pra galera!");
+            }
+        };
+
+        // --- FUNÇÕES DE UI ---
+        const shareTipModal = document.getElementById('share-tip-modal'), shareTipModalContent = document.getElementById('share-tip-modal-content');
+        const confirmDeleteModal = document.getElementById('confirm-delete-modal'), confirmDeleteModalContent = document.getElementById('confirm-delete-modal-content');
+        const tipDetailDrawer = document.getElementById('tip-detail-drawer'), successToast = document.getElementById('success-toast');
+        const openModal = (m, c) => { m.classList.remove('hidden', 'fade-out'); c.classList.remove('scale-out'); m.classList.add('fade-in'); c.classList.add('scale-in'); };
+        const closeModal = (m, c) => { m.classList.remove('fade-in'); c.classList.remove('scale-in'); m.classList.add('fade-out'); c.classList.add('scale-out'); setTimeout(() => m.classList.add('hidden'), 300); };
+        const openShareModal = () => openModal(shareTipModal, shareTipModalContent), closeShareModal = () => closeModal(shareTipModal, shareTipModalContent);
+        const openConfirmDeleteModal = (tipId) => { tipToDeleteId = tipId; openModal(confirmDeleteModal, confirmDeleteModalContent); };
+        const closeConfirmDeleteModal = () => { closeModal(confirmDeleteModal, confirmDeleteModalContent); tipToDeleteId = null; };
+        const openDetailDrawer = (tip) => {
+            activeTipIdForComments = tip.id;
+            document.getElementById('drawer-title').textContent = tip.title; document.getElementById('drawer-details').textContent = tip.details;
+            document.getElementById('drawer-location').textContent = tip.location; document.getElementById('drawer-hours').textContent = tip.hours;
+            document.getElementById('drawer-price').textContent = tip.price;
+            renderComments(tip.id);
+            tipDetailDrawer.classList.remove('hidden');
+            document.getElementById('drawer-content-wrapper').style.transition = 'transform 0.3s ease-out';
+            document.getElementById('drawer-content-wrapper').style.transform = 'translateY(0%)';
+        };
+        const closeDetailDrawer = () => {
+            const wrapper = document.getElementById('drawer-content-wrapper');
+            wrapper.style.transform = 'translateY(100%)';
+            setTimeout(() => { tipDetailDrawer.classList.add('hidden'); activeTipIdForComments = null; }, 300);
+        };
+        const showToast = (message) => {
+            successToast.textContent = message; successToast.classList.remove('hidden', 'slide-out'); successToast.classList.add('slide-in');
+            setTimeout(() => { successToast.classList.remove('slide-in'); successToast.classList.add('slide-out'); setTimeout(() => successToast.classList.add('hidden'), 400); }, 3000);
+        };
+        const applyTheme = () => {
+            document.body.classList.toggle('light-mode', currentTheme === 'light');
+            const sunIcons = document.querySelectorAll('[id^=theme-icon-sun]');
+            const moonIcons = document.querySelectorAll('[id^=theme-icon-moon]');
+            sunIcons.forEach(i => i.classList.toggle('hidden', currentTheme !== 'light'));
+            moonIcons.forEach(i => i.classList.toggle('hidden', currentTheme === 'light'));
+        };
+        const toggleTheme = () => { currentTheme = currentTheme === 'dark' ? 'light' : 'dark'; saveTheme(); applyTheme(); };
+        
+        // --- OBSERVER PARA ANIMAÇÃO DE SCROLL ---
+        const scrollObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) { entry.target.classList.add('visible'); scrollObserver.unobserve(entry.target); }
+            });
+        }, { threshold: 0.1 });
+
+        // --- INICIALIZAÇÃO E EVENT LISTENERS ---
+        document.addEventListener('DOMContentLoaded', () => {
+            loadData(); applyTheme(); renderTips();
+
+            const starsContainer = document.getElementById('stars-container');
+            for (let i = 0; i < 40; i++) {
+                const star = document.createElement('div'); star.className = 'star';
+                star.style.top = `${Math.random() * 100}%`; star.style.left = `${Math.random() * 100}%`;
+                star.style.width = `${1 + Math.random() * 2.5}px`; star.style.height = star.style.width;
+                star.style.animationDuration = `${3 + Math.random() * 4}s`; star.style.animationDelay = `${Math.random() * 5}s`;
+                starsContainer.appendChild(star);
+            }
+            document.querySelectorAll('.reveal').forEach(el => scrollObserver.observe(el));
+            const tipsContainer = document.getElementById('tips-container');
+            const mutationObserver = new MutationObserver((mutations) => {
+                 mutations.forEach(m => m.addedNodes.forEach(n => { if (n.nodeType === 1 && n.classList.contains('reveal')) scrollObserver.observe(n); }));
+            });
+            mutationObserver.observe(tipsContainer, { childList: true });
+
+            document.getElementById('search-input').addEventListener('input', (e) => renderTips(e.target.value));
+            
+            ['open-share-modal-desktop', 'open-share-modal-mobile'].forEach(id => document.getElementById(id).addEventListener('click', openShareModal));
+            shareTipModal.addEventListener('click', (e) => { if (e.target === shareTipModal) closeShareModal() });
+            document.getElementById('close-share-modal').addEventListener('click', closeShareModal);
+            document.getElementById('share-tip-form').addEventListener('submit', (e) => { e.preventDefault(); handleAddTip(new FormData(e.target)); closeShareModal(); e.target.reset(); });
+            
+            document.getElementById('tips-container').addEventListener('click', (e) => {
+                const likeBtn = e.target.closest('[data-like-id]'), deleteBtn = e.target.closest('[data-delete-id]'), detailsBtn = e.target.closest('[data-details-id]');
+                if (likeBtn) handleLike(Number(likeBtn.dataset.likeId));
+                if (deleteBtn) openConfirmDeleteModal(Number(deleteBtn.dataset.deleteId));
+                if (detailsBtn) { const tip = findTipById(Number(detailsBtn.dataset.detailsId)); if (tip) openDetailDrawer(tip); }
+            });
+
+            document.getElementById('cancel-delete').addEventListener('click', closeConfirmDeleteModal);
+            document.getElementById('confirm-delete').addEventListener('click', handleDeleteTip);
+            confirmDeleteModal.addEventListener('click', (e) => { if(e.target === confirmDeleteModal) closeConfirmDeleteModal() });
+
+            tipDetailDrawer.addEventListener('click', (e) => { if(e.target === tipDetailDrawer) closeDetailDrawer() });
+            document.getElementById('comment-form').addEventListener('submit', handleComment);
+            document.getElementById('share-button').addEventListener('click', () => handleShare(activeTipIdForComments));
+            
+            ['theme-toggle-desktop', 'theme-toggle-mobile'].forEach(id => document.getElementById(id).addEventListener('click', toggleTheme));
+
+            const mobileMenuButton = document.getElementById('mobile-menu-button'), mobileMenu = document.getElementById('mobile-menu');
+            const openIcon = document.getElementById('menu-icon-open'), closeIcon = document.getElementById('menu-icon-close');
+            mobileMenuButton.addEventListener('click', () => { mobileMenu.classList.toggle('hidden'); openIcon.classList.toggle('hidden'); closeIcon.classList.toggle('hidden'); });
+            document.querySelectorAll('.mobile-menu-link').forEach(link => link.addEventListener('click', () => { mobileMenu.classList.add('hidden'); openIcon.classList.remove('hidden'); closeIcon.classList.add('hidden'); }));
+        });
+    </script>
+</body>
+</html>
