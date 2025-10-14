@@ -46,12 +46,6 @@ Com um design moderno e intuitivo, o site busca fortalecer a conexão entre as p
 
 ---
 
-## 🖥️ Demonstração
-
-<div align="center">
-  <img src="https://placehold.co/800x450/0f172a/f1f5f9?text=Demonstra%C3%A7%C3%A3o+do+QuebraDica+Sorocaba" alt="Demonstração do QuebraDica Sorocaba" style="max-width:100%; height:auto;">
-</div>
-
 🔗 **Acesse o site aqui:**  
 👉 [https://rvalves10.github.io/Quebra-Dica-Sorocaba/](https://rvalves10.github.io/Quebra-Dica-Sorocaba/)
 
@@ -70,10 +64,6 @@ cd Quebra-Dica-Sorocaba
 Abra o arquivo index.html diretamente no seu navegador.
 (ou use a extensão Live Server do VSCode 🔥)
 
-📸 Prévia do site
-Tela inicial	Modal de Dica	Tema Escuro
-<img src="https://placehold.co/250x150/ffffff/000000?text=Home" />	<img src="https://placehold.co/250x150/ffffff/000000?text=Modal" />	<img src="https://placehold.co/250x150/ffffff/000000?text=Dark+Mode" />
-
 🚀 Próximas melhorias
  Implementar armazenamento local (localStorage) para salvar dicas
 
@@ -87,7 +77,6 @@ Tela inicial	Modal de Dica	Tema Escuro
 Feito com dedicação por Richard Victor 💻
 📍 Sorocaba - SP
 💬 Apaixonado por tecnologia, inovação e soluções para a comunidade.
-
 
 
 🪪 Licença
